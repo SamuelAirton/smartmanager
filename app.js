@@ -27,21 +27,33 @@ async function carregarProdutos() {
   const lista = document.getElementById("lista");
   lista.innerHTML = "";
 
+  // 🔥 LOOP CORRETO
   produtos.forEach(p => {
+
+    let classe = "";
+    let texto = "";
+
+    if (p.quantidade === 0) {
+      classe = "critico";
+      texto = "SEM ESTOQUE";
+    } else if (p.quantidade <= 5) {
+      classe = "baixo";
+      texto = "BAIXO";
+    }
+
     lista.innerHTML += `
       <li>
         ${p.nome} - €${p.preco} - ${p.quantidade}
+        <span class="${classe}">${texto}</span>
         <button onclick="editarProduto(${p.id}, '${p.nome}', ${p.preco}, ${p.quantidade})">✏️</button>
         <button onclick="deletarProduto(${p.id})">❌</button>
       </li>
     `;
   });
 
-  // dashboard atualizado aqui dentro (CORRETO)
   criarGrafico(produtos);
   atualizarDashboard(produtos);
 }
-
 
 // =======================
 // ADICIONAR PRODUTO
@@ -234,6 +246,33 @@ async function criarVenda() {
 
 
 // carregar vendas
+async function finalizarVenda() {
+  const token = localStorage.getItem("token");
+
+  const resposta = await fetch("http://localhost:3000/vendas", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ itens: carrinho })
+  });
+
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    alert(dados.error);
+    return;
+  }
+
+  alert("Venda realizada!");
+
+  carrinho = [];
+  mostrarCarrinho();
+  carregarProdutos();
+  carregarVendas();
+}
+// carregar venda
 async function carregarVendas() {
   const token = localStorage.getItem("token");
 
@@ -255,7 +294,12 @@ async function carregarVendas() {
       </li>
     `;
   });
+
+  // ✅ AGORA SIM correto
+  criarGraficoVendas(vendas);
+  atualizarFaturamento(vendas);
 }
+
 
 
 // =======================
@@ -277,7 +321,9 @@ function adicionarItem() {
 
   mostrarCarrinho();
 }
-
+// =======================
+// mostrarCarrinho
+// =======================
 function mostrarCarrinho() {
   const lista = document.getElementById("carrinho");
   lista.innerHTML = "";
@@ -290,3 +336,51 @@ function mostrarCarrinho() {
     `;
   });
 }
+// =======================
+// GRAFICO VENDA
+// =======================
+function criarGraficoVendas(vendas) {
+  const datas = vendas.map(v => new Date(v.data).toLocaleDateString());
+  const valores = vendas.map(v => v.total);
+
+  const ctx = document.getElementById("graficoVendas").getContext("2d");
+
+  if (window.graficoVendas) {
+    window.graficoVendas.destroy();
+  }
+
+  window.graficoVendas = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: datas,
+      datasets: [{
+        label: "Faturamento (€)",
+        data: valores
+      }]
+    }
+  });
+}
+// =======================
+// ATUALIZAR FATURAMENTO
+// =======================
+function atualizarFaturamento(vendas) {
+  const total = vendas.reduce((acc, v) => acc + v.total, 0);
+
+  document.getElementById("faturamentoTotal").innerText =
+    "€ " + total.toFixed(2);
+}
+async function testarRegister() {
+  const resposta = await fetch("http://localhost:3000/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      email: "teste@email.com",
+      senha: "123456"
+    })
+  });
+
+  const dados = await resposta.json();
+  console.log(dados);
+}   

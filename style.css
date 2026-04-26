@@ -107,3 +107,13 @@ canvas {
   margin-top: 20px;
   max-width: 100%;
 }
+/* ALERTAS DE ESTOQUE */
+.baixo {
+  color: orange;
+  font-weight: bold;
+}
+
+.critico {
+  color: red;
+  font-weight: bold;
+}

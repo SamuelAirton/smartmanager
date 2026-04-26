@@ -196,10 +196,33 @@ app.post("/vendas", autenticar, (req, res) => {
 
   let total = 0;
 
+  // 1️⃣ verificar estoque
+  for (let item of itens) {
+    db.get(
+      "SELECT quantidade FROM produtos WHERE id = ?",
+      [item.id],
+      (err, produto) => {
+        if (err) return res.status(500).json(err);
+
+        if (!produto) {
+          return res.status(400).json({ error: "Produto não existe" });
+        }
+
+        if (produto.quantidade < item.quantidade) {
+          return res.status(400).json({
+            error: `Estoque insuficiente para ${item.nome}`
+          });
+        }
+      }
+    );
+  }
+
+  // 2️⃣ calcular total
   itens.forEach(i => {
     total += i.preco * i.quantidade;
   });
 
+  // 3️⃣ salvar venda
   db.run(
     "INSERT INTO vendas (total, data) VALUES (?, ?)",
     [total, data],
@@ -209,11 +232,13 @@ app.post("/vendas", autenticar, (req, res) => {
       const vendaId = this.lastID;
 
       itens.forEach(i => {
+        // salvar itens
         db.run(
           "INSERT INTO itens_venda (venda_id, produto_id, quantidade, preco) VALUES (?, ?, ?, ?)",
           [vendaId, i.id, i.quantidade, i.preco]
         );
 
+        // atualizar estoque
         db.run(
           "UPDATE produtos SET quantidade = quantidade - ? WHERE id = ?",
           [i.quantidade, i.id]
@@ -221,13 +246,12 @@ app.post("/vendas", autenticar, (req, res) => {
       });
 
       res.json({
-        message: "Venda registrada",
+        message: "Venda realizada com sucesso",
         total
       });
     }
   );
 });
-
 
 // LISTAR VENDAS
 app.get("/vendas", autenticar, (req, res) => {
