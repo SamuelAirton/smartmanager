@@ -54,7 +54,8 @@ db.run(`
   CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE,
-    senha TEXT
+    senha TEXT,
+    tipo TEXT
   )
 `);
 
@@ -88,8 +89,8 @@ app.post("/register", async (req, res) => {
   const senhaHash = await bcrypt.hash(senha, 10);
 
   db.run(
-    "INSERT INTO usuarios (email, senha) VALUES (?, ?)",
-    [email, senhaHash],
+    "INSERT INTO usuarios (email, senha, tipo) VALUES (?, ?, ?)",
+    [email, senhaHash, "admin"],
     function (err) {
       if (err) return res.status(500).json({ error: "Usuário já existe" });
 
@@ -107,6 +108,8 @@ app.post("/login", (req, res) => {
     "SELECT * FROM usuarios WHERE email = ?",
     [email],
     async (err, user) => {
+      if (err) return res.status(500).json({ error: "Erro no servidor" });
+
       if (!user) {
         return res.status(401).json({ error: "Usuário não encontrado" });
       }
@@ -117,7 +120,15 @@ app.post("/login", (req, res) => {
         return res.status(401).json({ error: "Senha inválida" });
       }
 
-      const token = jwt.sign({ id: user.id }, "segredo");
+      // 🔐 AQUI É ONDE O TOKEN É CRIADO
+      const token = jwt.sign(
+        { 
+          id: user.id,
+          tipo: user.tipo 
+        },
+        "segredo",
+        { expiresIn: "1d" } // opcional, expira em 1 dia
+      );
 
       res.json({ token });
     }
