@@ -1,4 +1,11 @@
 // =======================
+// ESTADO GLOBAL
+// =======================
+let grafico;
+let carrinho = [];
+
+
+// =======================
 // CARREGAR PRODUTOS
 // =======================
 async function carregarProdutos() {
@@ -29,9 +36,13 @@ async function carregarProdutos() {
       </li>
     `;
   });
+
+  // dashboard atualizado aqui dentro (CORRETO)
+  criarGrafico(produtos);
+  atualizarDashboard(produtos);
 }
-criarGrafico(produtos);
-atualizarDashboard(produtos);
+
+
 // =======================
 // ADICIONAR PRODUTO
 // =======================
@@ -58,6 +69,7 @@ async function adicionarProduto() {
   carregarProdutos();
 }
 
+
 // =======================
 // EDITAR PRODUTO
 // =======================
@@ -82,6 +94,7 @@ async function editarProduto(id, nomeAtual, precoAtual, quantidadeAtual) {
   carregarProdutos();
 }
 
+
 // =======================
 // DELETAR PRODUTO
 // =======================
@@ -98,27 +111,9 @@ async function deletarProduto(id) {
   carregarProdutos();
 }
 
-// =======================
-// REGISTER (TESTE)
-// =======================
-async function testarRegister() {
-  const resposta = await fetch("http://localhost:3000/register", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      email: "teste@email.com",
-      senha: "123456"
-    })
-  });
-
-  const dados = await resposta.json();
-  console.log("REGISTER:", dados);
-}
 
 // =======================
-// LOGIN (SALVA TOKEN)
+// LOGIN
 // =======================
 async function login() {
   const email = document.getElementById("email").value;
@@ -141,13 +136,12 @@ async function login() {
     document.getElementById("sistema").style.display = "block";
 
     carregarProdutos();
+    carregarVendas();
   } else {
     alert("Login inválido");
   }
 }
 
-  // salva token
-  localStorage.setItem("token", dados.token);
 
 // =======================
 // LOGOUT
@@ -158,31 +152,35 @@ function logout() {
   document.getElementById("login").style.display = "block";
   document.getElementById("sistema").style.display = "none";
 }
+
+
 // =======================
-// INICIAR
+// INICIALIZAÇÃO
 // =======================
 const token = localStorage.getItem("token");
 
 if (token) {
   document.getElementById("login").style.display = "none";
   document.getElementById("sistema").style.display = "block";
+
   carregarProdutos();
+  carregarVendas();
 } else {
   document.getElementById("login").style.display = "block";
   document.getElementById("sistema").style.display = "none";
 }
-let grafico;
 
+
+// =======================
+// GRÁFICO
+// =======================
 function criarGrafico(produtos) {
   const nomes = produtos.map(p => p.nome);
   const quantidades = produtos.map(p => p.quantidade);
 
   const ctx = document.getElementById("grafico").getContext("2d");
 
-  // destruir gráfico antigo (evita bug)
-  if (grafico) {
-    grafico.destroy();
-  }
+  if (grafico) grafico.destroy();
 
   grafico = new Chart(ctx, {
     type: "bar",
@@ -195,24 +193,29 @@ function criarGrafico(produtos) {
     }
   });
 }
+
+
+// =======================
+// DASHBOARD
+// =======================
 function atualizarDashboard(produtos) {
   const totalProdutos = produtos.length;
 
-  const totalQuantidade = produtos.reduce((acc, p) => {
-    return acc + Number(p.quantidade);
-  }, 0);
+  const totalQuantidade = produtos.reduce((acc, p) => acc + Number(p.quantidade), 0);
 
-  const valorTotal = produtos.reduce((acc, p) => {
-    return acc + (p.preco * p.quantidade);
-  }, 0);
+  const valorTotal = produtos.reduce((acc, p) => acc + (p.preco * p.quantidade), 0);
 
   document.getElementById("totalProdutos").innerText = totalProdutos;
   document.getElementById("totalQuantidade").innerText = totalQuantidade;
   document.getElementById("valorTotal").innerText = "€ " + valorTotal.toFixed(2);
 }
-//=================
-// CRIAR VENDA
-//=================
+
+
+// =======================
+// VENDAS
+// =======================
+
+// criar venda simples
 async function criarVenda() {
   const token = localStorage.getItem("token");
   const total = document.getElementById("valorVenda").value;
@@ -228,9 +231,9 @@ async function criarVenda() {
 
   carregarVendas();
 }
-//==============
-// CARREGAR VENDA
-//==============
+
+
+// carregar vendas
 async function carregarVendas() {
   const token = localStorage.getItem("token");
 
@@ -249,6 +252,40 @@ async function carregarVendas() {
     lista.innerHTML += `
       <li>
         €${v.total} - ${new Date(v.data).toLocaleString()}
+      </li>
+    `;
+  });
+}
+
+
+// =======================
+// CARRINHO DE VENDAS
+// =======================
+
+function adicionarItem() {
+  const select = document.getElementById("produtoSelect");
+  const quantidade = document.getElementById("quantidadeVenda").value;
+
+  const produto = JSON.parse(select.value);
+
+  carrinho.push({
+    id: produto.id,
+    nome: produto.nome,
+    preco: produto.preco,
+    quantidade: Number(quantidade)
+  });
+
+  mostrarCarrinho();
+}
+
+function mostrarCarrinho() {
+  const lista = document.getElementById("carrinho");
+  lista.innerHTML = "";
+
+  carrinho.forEach(item => {
+    lista.innerHTML += `
+      <li>
+        ${item.nome} x${item.quantidade} - €${item.preco}
       </li>
     `;
   });

@@ -1,26 +1,20 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8">
   <title>SmartManager</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <body>
-
-<h1>SmartManager - Estoque</h1>
-
-<input type="text" id="nome" placeholder="Nome do produto">
-<input type="number" id="preco" placeholder="Preço">
-<input type="number" id="quantidade" placeholder="Quantidade">
-
-<button onclick="adicionarProduto()">Adicionar</button>
-
-<ul id="lista"></ul>
 
 <h1>SmartManager</h1>
 
-<!-- LOGIN -->
+<!-- =======================
+LOGIN
+======================= -->
 <div id="login">
   <h2>Login</h2>
   <input type="text" id="email" placeholder="Email">
@@ -28,48 +22,72 @@
   <button onclick="login()">Entrar</button>
 </div>
 
-<!-- SISTEMA -->
+<!-- =======================
+SISTEMA
+======================= -->
 <div id="sistema" style="display:none;">
-  <h3>Resumo</h3>
-<h3>Nova Venda</h3>
-
-<input type="number" id="valorVenda" placeholder="Valor total">
-<button onclick="criarVenda()">Registrar Venda</button>
-
-<h3>Histórico de Vendas</h3>
-<ul id="listaVendas"></ul>
-
-<div id="cards">
-  <div class="card">
-    <h4>Total de Produtos</h4>
-    <p id="totalProdutos">0</p>
-  </div>
-
-  <div class="card">
-    <h4>Total em Estoque</h4>
-    <p id="totalQuantidade">0</p>
-  </div>
-
-  <div class="card">
-    <h4>Valor Total (€)</h4>
-    <p id="valorTotal">0</p>
-  </div>
-</div>
-  <h3>Dashboard</h3>
-<canvas id="grafico"></canvas>
-  <h2>Estoque</h2>
 
   <button onclick="logout()">Logout</button>
 
-  <br><br>
+  <hr>
+
+  <!-- =======================
+  DASHBOARD
+  ======================= -->
+  <h2>Dashboard</h2>
+
+  <div id="cards">
+    <div class="card">
+      <h4>Total de Produtos</h4>
+      <p id="totalProdutos">0</p>
+    </div>
+
+    <div class="card">
+      <h4>Total em Estoque</h4>
+      <p id="totalQuantidade">0</p>
+    </div>
+
+    <div class="card">
+      <h4>Valor Total (€)</h4>
+      <p id="valorTotal">0</p>
+    </div>
+  </div>
+
+  <canvas id="grafico"></canvas>
+
+  <hr>
+
+  <!-- =======================
+  PRODUTOS
+  ======================= -->
+  <h2>Estoque</h2>
 
   <input type="text" id="nome" placeholder="Nome do produto">
   <input type="number" id="preco" placeholder="Preço">
   <input type="number" id="quantidade" placeholder="Quantidade">
 
-  <button onclick="adicionarProduto()">Adicionar</button>
+  <button onclick="adicionarProduto()">Adicionar Produto</button>
 
   <ul id="lista"></ul>
+
+  <hr>
+
+  <!-- =======================
+  VENDAS
+  ======================= -->
+  <h2>Vendas</h2>
+
+  <select id="produtoSelect"></select>
+  <input type="number" id="quantidadeVenda" placeholder="Quantidade">
+
+  <button onclick="adicionarItem()">Adicionar Item</button>
+  <button onclick="finalizarVenda()">Finalizar Venda</button>
+
+  <ul id="carrinho"></ul>
+
+  <h3>Histórico de Vendas</h3>
+  <ul id="listaVendas"></ul>
+
 </div>
 
 <script src="app.js"></script>

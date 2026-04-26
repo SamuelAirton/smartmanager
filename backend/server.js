@@ -9,10 +9,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
 // =======================
 // BANCO DE DADOS
 // =======================
 const db = new sqlite3.Database("./database.db");
+
 
 // =======================
 // MIDDLEWARE DE AUTENTICAÇÃO
@@ -34,6 +36,7 @@ function autenticar(req, res, next) {
     return res.status(401).json({ error: "Token inválido" });
   }
 }
+
 
 // =======================
 // TABELAS
@@ -62,36 +65,23 @@ db.run(`
     data TEXT
   )
 `);
-// =======================
-// criar venda
-//========================
-app.post("/vendas", autenticar, (req, res) => {
-  const { total } = req.body;
-  const data = new Date().toISOString();
 
-  db.run(
-    "INSERT INTO vendas (total, data) VALUES (?, ?)",
-    [total, data],
-    function (err) {
-      if (err) return res.status(500).json(err);
+db.run(`
+  CREATE TABLE IF NOT EXISTS itens_venda (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    venda_id INTEGER,
+    produto_id INTEGER,
+    quantidade INTEGER,
+    preco REAL
+  )
+`);
 
-      res.json({ id: this.lastID, total, data });
-    }
-  );
-});
-// =======================
-// LISTAR VENDA
-// =======================
-app.get("/vendas", autenticar, (req, res) => {
-  db.all("SELECT * FROM vendas ORDER BY data DESC", [], (err, rows) => {
-    if (err) return res.status(500).json(err);
-    res.json(rows);
-  });
-});
 
 // =======================
-// REGISTER (SEM PROTEÇÃO)
+// AUTH
 // =======================
+
+// REGISTER
 app.post("/register", async (req, res) => {
   const { email, senha } = req.body;
 
@@ -108,9 +98,8 @@ app.post("/register", async (req, res) => {
   );
 });
 
-// =======================
-// LOGIN (SEM PROTEÇÃO)
-// =======================
+
+// LOGIN
 app.post("/login", (req, res) => {
   const { email, senha } = req.body;
 
@@ -134,9 +123,10 @@ app.post("/login", (req, res) => {
     }
   );
 });
-carregarVendas();
+
+
 // =======================
-// PRODUTOS (PROTEGIDOS)
+// PRODUTOS (PROTEGIDO)
 // =======================
 
 // LISTAR
@@ -193,6 +183,60 @@ app.delete("/produtos/:id", autenticar, (req, res) => {
     res.json({ message: "Produto deletado" });
   });
 });
+
+
+// =======================
+// VENDAS
+// =======================
+
+// CRIAR VENDA COMPLETA
+app.post("/vendas", autenticar, (req, res) => {
+  const { itens } = req.body;
+  const data = new Date().toISOString();
+
+  let total = 0;
+
+  itens.forEach(i => {
+    total += i.preco * i.quantidade;
+  });
+
+  db.run(
+    "INSERT INTO vendas (total, data) VALUES (?, ?)",
+    [total, data],
+    function (err) {
+      if (err) return res.status(500).json(err);
+
+      const vendaId = this.lastID;
+
+      itens.forEach(i => {
+        db.run(
+          "INSERT INTO itens_venda (venda_id, produto_id, quantidade, preco) VALUES (?, ?, ?, ?)",
+          [vendaId, i.id, i.quantidade, i.preco]
+        );
+
+        db.run(
+          "UPDATE produtos SET quantidade = quantidade - ? WHERE id = ?",
+          [i.quantidade, i.id]
+        );
+      });
+
+      res.json({
+        message: "Venda registrada",
+        total
+      });
+    }
+  );
+});
+
+
+// LISTAR VENDAS
+app.get("/vendas", autenticar, (req, res) => {
+  db.all("SELECT * FROM vendas ORDER BY data DESC", [], (err, rows) => {
+    if (err) return res.status(500).json(err);
+    res.json(rows);
+  });
+});
+
 
 // =======================
 // START SERVER
