@@ -27,29 +27,39 @@ async function carregarProdutos() {
   const lista = document.getElementById("lista");
   lista.innerHTML = "";
 
-  // 🔥 LOOP CORRETO
-  produtos.forEach(p => {
+  const user = getUserFromToken();
 
-    let classe = "";
-    let texto = "";
+produtos.forEach(p => {
 
-    if (p.quantidade === 0) {
-      classe = "critico";
-      texto = "SEM ESTOQUE";
-    } else if (p.quantidade <= 5) {
-      classe = "baixo";
-      texto = "BAIXO";
-    }
+  let classe = "";
+  let texto = "";
 
-    lista.innerHTML += `
-      <li>
-        ${p.nome} - €${p.preco} - ${p.quantidade}
-        <span class="${classe}">${texto}</span>
-        <button onclick="editarProduto(${p.id}, '${p.nome}', ${p.preco}, ${p.quantidade})">✏️</button>
-        <button onclick="deletarProduto(${p.id})">❌</button>
-      </li>
+  if (p.quantidade === 0) {
+    classe = "critico";
+    texto = "SEM ESTOQUE";
+  } else if (p.quantidade <= 5) {
+    classe = "baixo";
+    texto = "BAIXO";
+  }
+
+  // 🔐 botões só para admin
+  let botoes = "";
+
+  if (user?.tipo === "admin") {
+    botoes = `
+      <button onclick="editarProduto(${p.id}, '${p.nome}', ${p.preco}, ${p.quantidade})">✏️</button>
+      <button onclick="deletarProduto(${p.id})">❌</button>
     `;
-  });
+  }
+
+  lista.innerHTML += `
+    <li>
+      ${p.nome} - €${p.preco} - ${p.quantidade}
+      <span class="${classe}">${texto}</span>
+      ${botoes}
+    </li>
+  `;
+});
 
   criarGrafico(produtos);
   atualizarDashboard(produtos);
@@ -164,7 +174,7 @@ function logout() {
   document.getElementById("login").style.display = "block";
   document.getElementById("sistema").style.display = "none";
 }
-
+carregarSelectProdutos();
 
 // =======================
 // INICIALIZAÇÃO
@@ -245,9 +255,14 @@ async function criarVenda() {
 }
 
 
-// carregar vendas
+// FINALIZAR VENDA
 async function finalizarVenda() {
   const token = localStorage.getItem("token");
+
+  if (carrinho.length === 0) {
+    alert("Carrinho vazio");
+    return;
+  }
 
   const resposta = await fetch("http://localhost:3000/vendas", {
     method: "POST",
@@ -261,16 +276,17 @@ async function finalizarVenda() {
   const dados = await resposta.json();
 
   if (!resposta.ok) {
-    alert(dados.error);
+    alert(dados.error || "Erro na venda");
     return;
   }
 
-  alert("Venda realizada!");
+  alert("Venda realizada com sucesso!");
 
   carrinho = [];
   mostrarCarrinho();
   carregarProdutos();
   carregarVendas();
+  carregarSelectProdutos();
 }
 // carregar venda
 async function carregarVendas() {
@@ -295,7 +311,6 @@ async function carregarVendas() {
     `;
   });
 
-  // ✅ AGORA SIM correto
   criarGraficoVendas(vendas);
   atualizarFaturamento(vendas);
 }
@@ -303,21 +318,33 @@ async function carregarVendas() {
 
 
 // =======================
-// CARRINHO DE VENDAS
+// CARRINHO DE VENDAS ADICIONAR ITEM
 // =======================
 
 function adicionarItem() {
   const select = document.getElementById("produtoSelect");
-  const quantidade = document.getElementById("quantidadeVenda").value;
+  const quantidade = Number(document.getElementById("quantidadeVenda").value);
+
+  if (!quantidade || quantidade <= 0) {
+    alert("Quantidade inválida");
+    return;
+  }
 
   const produto = JSON.parse(select.value);
 
-  carrinho.push({
-    id: produto.id,
-    nome: produto.nome,
-    preco: produto.preco,
-    quantidade: Number(quantidade)
-  });
+  // 🔍 verifica se já existe no carrinho
+  const itemExistente = carrinho.find(i => i.id === produto.id);
+
+  if (itemExistente) {
+    itemExistente.quantidade += quantidade;
+  } else {
+    carrinho.push({
+      id: produto.id,
+      nome: produto.nome,
+      preco: produto.preco,
+      quantidade: quantidade
+    });
+  }
 
   mostrarCarrinho();
 }
@@ -328,13 +355,26 @@ function mostrarCarrinho() {
   const lista = document.getElementById("carrinho");
   lista.innerHTML = "";
 
-  carrinho.forEach(item => {
+  let total = 0;
+
+  carrinho.forEach((item, index) => {
+    total += item.preco * item.quantidade;
+
     lista.innerHTML += `
       <li>
-        ${item.nome} x${item.quantidade} - €${item.preco}
+        ${item.nome}
+        <input type="number" value="${item.quantidade}" min="1"
+          onchange="alterarQuantidade(${index}, this.value)">
+        - €${item.preco}
+        <button onclick="removerItem(${index})">❌</button>
       </li>
     `;
   });
+
+  lista.innerHTML += `
+    <hr>
+    <strong>Total: €${total.toFixed(2)}</strong>
+  `;
 }
 // =======================
 // GRAFICO VENDA
@@ -384,3 +424,53 @@ async function testarRegister() {
   const dados = await resposta.json();
   console.log(dados);
 }   
+function getUserFromToken() {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+
+  const payload = JSON.parse(atob(token.split(".")[1]));
+  return payload;
+}
+async function carregarSelectProdutos() {
+  const token = localStorage.getItem("token");
+
+  const resposta = await fetch("http://localhost:3000/produtos", {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  });
+
+  const produtos = await resposta.json();
+
+  const select = document.getElementById("produtoSelect");
+  select.innerHTML = "";
+
+  produtos.forEach(p => {
+    select.innerHTML += `
+      <option value='${JSON.stringify(p)}'>
+        ${p.nome} - €${p.preco}
+      </option>
+    `;
+  });
+}
+//==================
+// ALTERAR QUANTIDADE
+//==================
+function alterarQuantidade(index, novaQtd) {
+  carrinho[index].quantidade = Number(novaQtd);
+  mostrarCarrinho();
+}
+//=================
+// REMOVER ITEM
+//=================
+function removerItem(index) {
+  carrinho.splice(index, 1);
+  mostrarCarrinho();
+}
+//=================
+// LIMPAR CARRINHO
+//=================
+function limparCarrinho() {
+  carrinho = [];
+  mostrarCarrinho();
+}

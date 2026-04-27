@@ -205,18 +205,25 @@ app.post("/vendas", autenticar, (req, res) => {
   const { itens } = req.body;
   const data = new Date().toISOString();
 
-  let total = 0;
+  if (!itens || itens.length === 0) {
+    return res.status(400).json({ error: "Carrinho vazio" });
+  }
 
-  // 1️⃣ verificar estoque
-  for (let item of itens) {
-    db.get(
-      "SELECT quantidade FROM produtos WHERE id = ?",
-      [item.id],
-      (err, produto) => {
-        if (err) return res.status(500).json(err);
+  // 🔄 buscar todos produtos de uma vez
+  const ids = itens.map(i => i.id);
+
+  db.all(
+    `SELECT id, quantidade FROM produtos WHERE id IN (${ids.map(() => "?").join(",")})`,
+    ids,
+    (err, produtosDB) => {
+      if (err) return res.status(500).json(err);
+
+      // 🔍 validar estoque
+      for (let item of itens) {
+        const produto = produtosDB.find(p => p.id === item.id);
 
         if (!produto) {
-          return res.status(400).json({ error: "Produto não existe" });
+          return res.status(400).json({ error: `Produto não existe` });
         }
 
         if (produto.quantidade < item.quantidade) {
@@ -225,41 +232,41 @@ app.post("/vendas", autenticar, (req, res) => {
           });
         }
       }
-    );
-  }
 
-  // 2️⃣ calcular total
-  itens.forEach(i => {
-    total += i.preco * i.quantidade;
-  });
-
-  // 3️⃣ salvar venda
-  db.run(
-    "INSERT INTO vendas (total, data) VALUES (?, ?)",
-    [total, data],
-    function (err) {
-      if (err) return res.status(500).json(err);
-
-      const vendaId = this.lastID;
-
+      // 💰 calcular total
+      let total = 0;
       itens.forEach(i => {
-        // salvar itens
-        db.run(
-          "INSERT INTO itens_venda (venda_id, produto_id, quantidade, preco) VALUES (?, ?, ?, ?)",
-          [vendaId, i.id, i.quantidade, i.preco]
-        );
-
-        // atualizar estoque
-        db.run(
-          "UPDATE produtos SET quantidade = quantidade - ? WHERE id = ?",
-          [i.quantidade, i.id]
-        );
+        total += i.preco * i.quantidade;
       });
 
-      res.json({
-        message: "Venda realizada com sucesso",
-        total
-      });
+      // 💾 salvar venda
+      db.run(
+        "INSERT INTO vendas (total, data) VALUES (?, ?)",
+        [total, data],
+        function (err) {
+          if (err) return res.status(500).json(err);
+
+          const vendaId = this.lastID;
+
+          itens.forEach(i => {
+            db.run(
+              "INSERT INTO itens_venda (venda_id, produto_id, quantidade, preco) VALUES (?, ?, ?, ?)",
+              [vendaId, i.id, i.quantidade, i.preco]
+            );
+
+            db.run(
+              "UPDATE produtos SET quantidade = quantidade - ? WHERE id = ?",
+              [i.quantidade, i.id]
+            );
+          });
+
+          // ✅ UMA ÚNICA RESPOSTA
+          res.json({
+            message: "Venda realizada com sucesso",
+            total
+          });
+        }
+      );
     }
   );
 });
