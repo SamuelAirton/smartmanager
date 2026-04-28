@@ -1,0 +1,92 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #eef2f7;
+  margin: 0;
+}
+
+/* CONTAINER */
+#sistema {
+  width: 90%;
+  max-width: 1000px;
+  margin: auto;
+}
+
+/* TÍTULO */
+h1 {
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* CARDS */
+#cards {
+  display: flex;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.card {
+  flex: 1;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.card h4 {
+  margin: 0;
+  color: #666;
+}
+
+.card p {
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* FORM */
+input, select {
+  padding: 10px;
+  margin: 5px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* BOTÕES */
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+/* LISTAS */
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  background: white;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ALERTAS ESTOQUE */
+.critico {
+  color: red;
+  font-weight: bold;
+}
+
+.baixo {
+  color: orange;
+}

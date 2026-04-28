@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
   <meta charset="UTF-8">
   <title>SmartManager</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -12,9 +11,7 @@
 
 <h1>SmartManager</h1>
 
-<!-- =======================
-LOGIN
-======================= -->
+<!-- LOGIN -->
 <div id="login">
   <h2>Login</h2>
   <input type="text" id="email" placeholder="Email">
@@ -22,18 +19,11 @@ LOGIN
   <button onclick="login()">Entrar</button>
 </div>
 
-<!-- =======================
-SISTEMA
-======================= -->
+<!-- SISTEMA -->
 <div id="sistema" style="display:none;">
 
   <button onclick="logout()">Logout</button>
 
-  <hr>
-
-  <!-- =======================
-  DASHBOARD
-  ======================= -->
   <h2>Dashboard</h2>
 
   <div id="cards">
@@ -55,26 +45,16 @@ SISTEMA
 
   <canvas id="grafico"></canvas>
 
-  <hr>
+  <h2>Produtos</h2>
 
-  <!-- =======================
-  PRODUTOS
-  ======================= -->
-  <h2>Estoque</h2>
-
-  <input type="text" id="nome" placeholder="Nome do produto">
+  <input type="text" id="nome" placeholder="Nome">
   <input type="number" id="preco" placeholder="Preço">
   <input type="number" id="quantidade" placeholder="Quantidade">
 
-  <button onclick="adicionarProduto()">Adicionar Produto</button>
+  <button onclick="adicionarProduto()">Adicionar</button>
 
   <ul id="lista"></ul>
 
-  <hr>
-
-  <!-- =======================
-  VENDAS
-  ======================= -->
   <h2>Vendas</h2>
 
   <select id="produtoSelect"></select>
@@ -82,19 +62,19 @@ SISTEMA
 
   <button onclick="adicionarItem()">Adicionar Item</button>
   <button onclick="finalizarVenda()">Finalizar Venda</button>
+  <button onclick="limparCarrinho()">Limpar Carrinho</button>
 
   <ul id="carrinho"></ul>
-<button onclick="limparCarrinho()">🧹 Limpar Carrinho</button>
-  <h3>Histórico de Vendas</h3>
+
+  <h3>Histórico</h3>
   <ul id="listaVendas"></ul>
-
-<h3>Faturamento Total</h3>
-<p id="faturamentoTotal">€ 0</p>
-
-<canvas id="graficoVendas"></canvas>
 
 </div>
 
-<script src="app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/produtos.js"></script>
+<script src="js/vendas.js"></script>
+<script src="js/dashboard.js"></script>
+
 </body>
 </html>
